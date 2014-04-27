@@ -1,0 +1,472 @@
+######################################################
+# Author: C3C Gavin Delphia
+# Date: 14 Feb 11
+# Filename: DELPHIA_PEX2
+# Purpose: To demonstrate a working PEX2 assignment
+# Docuementation: I recieved some incredible EI from LtCol Bibighaus on how to store data in arrays, get it back out
+# 	and how to compare strings. C3C Alex Thomson told me to use bgt rather than bge for the print all records loop.
+# 	I also used notes from class to get the basic array setup. I did not recieve any other help on this assignment.
+######################################################
+
+.data
+
+header:		.asciiz	"Enter Cadet Data\n"
+
+option1:	.asciiz "1. Search by squadron name\n"
+option2:	.asciiz "2. Search by number of members\n"
+option3:	.asciiz "3. Display all\n"
+option4:	.asciiz "4. Quit\n\n"
+
+prompt1:	.asciiz "Squadron name: "
+prompt2:	.asciiz "Squadron number: "
+prompt3:	.asciiz "Number of members: "
+
+inform:		.asciiz "Your selection: "
+newline:	.asciiz "\n"
+bye:		.asciiz "Goodbye!"
+error:		.asciiz "Please select an option from 1-4\n"
+sentinal:	.asciiz "none\n"
+
+.align 2
+array: 	.space 2048
+userinput: .space 28
+
+.text
+###########################################################################################
+# Displays the initial prompt and calls the loop that inputs data
+###########################################################################################
+main:
+	li $v0 4		# load system call code for print_string	
+	la $a0 header		# address of the header string
+	syscall			# print the message
+	
+	addi $sp $sp -4		# increase the stack pointer
+	sw $ra 0($sp)		# save the return address into the stack
+	jal askforinput		# jump and link askforinput
+	lw $ra 0($sp)		# recall the $ra from the stack
+	addi $sp $sp 4		# decrease the stack pointer
+	
+	addi $sp $sp -4		# increase the stack pointer
+	sw $ra 0($sp)		# save the return address into the stack
+	jal display_menu	# jump and link display_menu
+	lw $ra 0($sp)		# recall the $ra from the stack
+	addi $sp $sp 4		# decrease the stack pointer
+	
+	li $v0 10 		# system call code for quit
+	syscall			# quit
+	
+###########################################################################################
+# Initializes the input loop variables
+#
+# $s0 = record counter
+# $t0 = offset counter
+###########################################################################################
+askforinput:
+	li $s0 0		# set the record counter to 0
+	li $t0 0		# set the offset counter to 0
+	
+###########################################################################################
+# Asks for squad name, number, and members until "none" is entered for a squad name
+# then jumps to display_menu. This inputted data is added to the array using adddata method
+###########################################################################################
+inputLoop:
+	li $v0 4		# load system call code for print_string
+	la $a0 newline		# address of the prompt1 string
+	syscall			# print the message
+
+#prompt squad name
+	li $v0 4		# load system call code for print_string
+	la $a0 prompt1		# address of the prompt1 string
+	syscall			# print the message
+	
+	#read squad name and store in array
+	li $v0 8		# load system call code for read string
+	
+	la $a0 array($t0)	# load address of array offset by $t0
+	li $a1 27		# how many bytes the array can hold
+	syscall			# store the string in the array
+	
+	la $a1 sentinal		# load the address of sentinal into $a1
+	
+	addi $sp $sp -4		# increase the stack pointer
+	sw $ra 0($sp)		# save the return address into the stack
+	jal comparestrings	# jump and link comparestrings
+	lw $ra 0($sp)		# recall the $ra from the stack
+	addi $sp $sp 4		# decrease the stack pointer
+	
+	bnez $v0 endInput	# brand if last string entered = "none"
+	
+	addi $t0 $t0 28		# increment offset
+	
+#prompt squad number
+	li $v0 4		# load system call code for print_string
+	la $a0 prompt2		# address of the prompt2 string
+	syscall			# print the message
+	
+	#read squad number
+	li $v0 5		# load system call code for read integer
+	syscall			# get the integer
+	
+	#store result in array
+	sw $v0 array($t0)	# store the result in array($t0)
+	addi $t0 $t0 4		# increment offset
+	
+#prompt number of members
+	li $v0 4		# load system call code for print_string	
+	la $a0 prompt3		# address of the prompt2 string
+	syscall			# print the message
+
+	#read number of members
+	li $v0 5		# load system call code for read integer
+	syscall			# get the integer
+	
+	#store result in array
+	sw $v0 array($t0)	# store the result in array($t0)
+	
+	addi $t0 $t0 4		# increment offset $t0 by 4
+	addi $s0 $s0 1		# increment $s0 by 1
+	
+#loop 
+	j inputLoop		# ask for more input
+	
+###########################################################################################
+# The end of the loop. Jumps to the return address
+###########################################################################################
+endInput:	
+	jr $ra			# jumps back to the return address
+	
+###########################################################################################
+# Compare the strings byte by byte
+###########################################################################################
+comparestrings:
+	lbu $t1 0($a0)				# load unsigned byte into $t1 from $a0
+	lbu $t2 0($a1)				# load unsigned byte into $t2 from $a1	
+	bne $t1 $t2 comparestrings_notequal	# branch if $t1 != $t2 to notequal
+	beqz $t1 comparestrings_equal		# branch if $t1 = 0 to equal
+	addi $a0 $a0 1				# add 1 to the $a0 address
+	addi $a1 $a1 1				# add 1 to the $a1 address
+	j comparestrings			# jump to comparestrings to loop
+	
+###########################################################################################
+# Not equal branch of comparestrings
+###########################################################################################
+comparestrings_notequal:
+	li $v0 0	# set $v0 = 0
+	jr $ra		# jump to the return address
+	
+###########################################################################################
+# Equal branch of comparestrings
+###########################################################################################
+comparestrings_equal:
+	li $v0 1	# set $v0 = 1
+	jr $ra		# jump to the return address
+	
+###########################################################################################
+# Displays the menu of options that allows the user to search through the data or quit
+###########################################################################################
+display_menu:	
+	li $v0 4			# load system call code for print_string	
+	la $a0 newline			# address of the newline string
+	syscall				# print the message
+	
+	li $v0 4			# load system call code for print_string	
+	la $a0 option1			# address of the option1 string
+	syscall				# print the message
+	
+	li $v0 4			# load system call code for print_string
+	la $a0 option2			# address of the option2 string
+	syscall				# print the message
+
+	li $v0 4			# load system call code for print_string
+	la $a0 option3			# address of the option3 string
+	syscall				# print the message
+	
+	li $v0 4			# load system call code for print_string
+	la $a0 option4			# address of the option4 string
+	syscall				# print the message	
+	
+	li $v0 4			# load system call code for print_string
+	la $a0 inform			# address of the inform string
+	syscall				# print the message	
+	
+	li $v0 5			# load system call code for read integer
+	syscall				# get the integer
+	move $s2 $v0			# store the result in $s2
+	
+	blez $s2 display_menu_error 	# if $s2 is less than or equal to zero jump to main_error
+	bgt $s2 4 display_menu_error	# if $s2 is greater than 4 jump to main_error
+	
+	beq $s2 1 searchname		# jump to searchname if $s2 is equal to 1
+	beq $s2 2 searchmembers		# jump to searchmembers if $s2 is equal to 2
+	beq $s2 3 displayall		# jump to displayall if $s2 is equal to 3
+	beq $s2 4 quit			# jump to quit if $s2 is equal to 4
+
+###########################################################################################
+# Displays an error if bad menu input occurs then jumps back to the display_menu
+###########################################################################################
+display_menu_error:
+	li $v0 4	# load system call code for print_string
+	la $a0 error	# address of the error string
+	syscall		# print the message
+	j display_menu	# jump back to main to ask again
+	
+###########################################################################################
+# Asks for a name to search for then starts the searchname_loop
+###########################################################################################
+searchname:
+	li $s1 1		# current record
+	
+	li $v0 4		# load system call code for print_string	
+	la $a0 newline		# address of the newline string
+	syscall			# print the message
+
+	#prompt squad name
+	li $v0 4		# load system call code for print_string
+	la $a0 prompt1		# address of the prompt1 string
+	syscall			# print the message
+	
+	#read squad name and store in array
+	li $v0 8		# load system call code for read string
+	la $a0 userinput	# load address of userinput
+	li $a1 27		# how many bytes the string can hold
+	syscall			# store the string in the userinput	
+	
+	li $v0 4		# load system call code for print_string	
+	la $a0 newline		# address of the newline string
+	syscall			# print the message
+	
+	la $a0 userinput	# laod the userinput into addres $a0
+	
+	# at this point have the user input $a0 and need to get $a1. $s1 is the current record
+	j searchname_loop	# jump to search_name
+	
+###########################################################################################
+# Loops searching the array for a specific string until its found or no more records exist
+###########################################################################################
+searchname_loop:
+	move $a2 $s1			# assign $a2 = $s1
+
+	addi $sp $sp -4			# increase the stack pointer
+	sw $ra 0($sp)			# save the return address into the stack
+	jal getname			# jump and link getname
+	lw $ra 0($sp)			# recall the $ra from the stack
+	addi $sp $sp 4			# decrease the stack pointer
+
+	addi $sp $sp -4			# increase the stack pointer
+	sw $ra 0($sp)			# save the return address into the stack
+	jal comparestrings		# jump and link comparestrings
+	lw $ra 0($sp)			# recall the $ra from the stack
+	addi $sp $sp 4			# decrease the stack pointer
+	
+	bnez $v0 searchname_match	# break if not equal to zero to searchname_match
+	addi $s1 $s1 1			# increment record
+	
+	bgt $s1 $s0 searchname_nomatch	# break if $s1 is greater than $s0 to searchname_nomatch
+	
+	j searchname_loop		# jump to searchme_loop
+
+###########################################################################################
+# Displays the matched squadron name and jumps back to the menu
+###########################################################################################
+searchname_match:
+	move $a1 $s1		# assign $a1 to $s1
+	
+	addi $sp $sp -4		# increase the stack pointer
+	sw $ra 0($sp)		# save the return address into the stack
+	jal printrecord		# jump to printrecord
+	lw $ra 0($sp)		# recall the $ra from the stack
+	addi $sp $sp 4		# decrease the stack pointer
+	
+	li $v0 4		# load system call code for print_string	
+	la $a0 newline		# address of the newline string
+	syscall			# print the message
+	
+	j display_menu		# jump to display_menu
+	
+###########################################################################################
+# No matches found so jump back to menu
+###########################################################################################
+searchname_nomatch:
+	j display_menu		# jump to display_menu
+
+###########################################################################################
+# Gets user input for squadron member number they are looking for and starts the loop
+###########################################################################################
+searchmembers:
+	li $s1 1		# current record
+	
+	li $v0 4		# load system call code for print_string	
+	la $a0 newline		# address of the newline string
+	syscall			# print the message
+
+	#prompt member number
+	li $v0 4		# load system call code for print_string
+	la $a0 prompt3		# address of the prompt3 string
+	syscall			# print the message
+	
+	#read member number into register
+	li $v0 5		# load system call code for read integer
+	syscall			# get the integer
+	move $s2 $v0		# store the result in $s2
+	
+	li $v0 4		# load system call code for print_string	
+	la $a0 newline		# address of the newline string
+	syscall			# print the message
+	
+	# at this point have the user input $s2 and need to get $a1. $s1 is the current record
+	j searchmembers_loop	# jump to searmembers_loop
+	
+	
+###########################################################################################
+# Loops through the array and prints records with matching squad member numbers 
+###########################################################################################
+searchmembers_loop:
+	move $a2 $s1				# assign $a2 = $s1
+	addi $sp $sp -4				# increase the stack pointer
+	sw $ra 0($sp)				# save the return address into the stack
+	jal getmembers				# jump and link getmembers
+	lw $ra 0($sp)				# recall the $ra from the stack
+	addi $sp $sp 4				# decrease the stack pointer
+	
+	addi $s1 $s1 1				# increment record
+	beq $a1 $s2 searchmembers_match		# branch if $a1 = $s2 to searchmembers_match
+	bgt $s1 $s0 searchmembers_nomatch	# break if $s1 is greater than $s0 to searchmembers_nomatch
+	j searchmembers_loop			# jump to searchmembers_loop
+
+###########################################################################################
+# Displays the matched squadron members number record and jumps back to the loop
+###########################################################################################
+searchmembers_match:
+	move $a1 $s1				# assign $a1 to $s1
+	subi $a1 $a1 1				# subtract 1 from $a1
+	
+	li $v0 4				# load system call code for print_string	
+	la $a0 newline				# address of the newline string
+	syscall					# print the message
+	
+	addi $sp $sp -4				# increase the stack pointer
+	sw $ra 0($sp)				# save the return address into the stack
+	jal printrecord				# jump to printrecord
+	lw $ra 0($sp)				# recall the $ra from the stack
+	addi $sp $sp 4				# decrease the stack pointer
+	
+	li $v0 4				# load system call code for print_string	
+	la $a0 newline				# address of the newline string
+	syscall					# print the message
+	
+	bgt $s1 $s0 searchmembers_nomatch	# break if $s1 is greater than $s0 to searchmembers_nomatch	
+	j searchmembers_loop			# jump to searchmembers_loop
+	
+###########################################################################################
+# No matches found so jump back to menu
+###########################################################################################
+searchmembers_nomatch:
+	j display_menu		# jump to display_menu
+	
+###########################################################################################
+# Gets the name when supplied a record number
+###########################################################################################
+getname:
+	li $t4 36		# load 36 into $t4
+	subi $a2 $a2 1		# subtract 1 from $a2
+	mult $a2 $t4		# multiply $a2 by $t4
+	mflo $a2		# store result of mult in $a2
+	
+	la $a1 array($a2)	# load the address of the string into $a1
+	jr $ra			# jump to the return address
+	
+###########################################################################################
+# Gets the squadron member number when supplied a record number
+###########################################################################################
+getmembers:
+	li $t4 36		# load 36 into $t4
+	subi $a2 $a2 1		# subtract 1 from $a2
+	mult $a2 $t4		# multiply $a2 by $t4
+	mflo $a2		# store result of mult in $a2
+	
+	addi $a2 $a2 32		# add 32 to $a2
+	lw $a1 array($a2)	# store the integer in the array to $a1
+	jr $ra			# jump to return address
+
+###########################################################################################
+# Displays a record based on its starting address
+# $a1 is the record #
+# offsetaddress = (record - 1)*36
+###########################################################################################
+printrecord:
+	li $t4 36		# load 36 into $t4
+	subi $a1 $a1 1		# subtract 1 from the record $a1
+	mult $a1 $t4		# multiply $a1 by 36
+	mflo $a1		# store multiplication result to $a1
+	
+	li $v0 4		# load system call code for print_string	
+	la $a0 prompt1		# address of the prompt1 string
+	syscall			# print the message
+	
+	li $v0 4		# load system call code for print_string	
+	la $a0 array($a1)	# address of the squadron name string
+	syscall			# print the message
+	
+	addi $a1 $a1 28		# add 4 to the address
+	
+	li $v0 4		# load system call code for print_string	
+	la $a0 prompt2		# address of the prompt3 string
+	syscall			# print the message
+	
+	li $v0 1		# load system call code for print_int
+	lw $a0 array($a1)	# address of the integer to print
+	syscall			# print the integer
+	
+	addi $a1 $a1 4		# add 4 to the address
+	
+	li $v0 4		# load system call code for print_string	
+	la $a0 newline		# address of the newline string
+	syscall			# print the message
+	
+	li $v0 4		# load system call code for print_string	
+	la $a0 prompt3		# address of the prompt3 string
+	syscall			# print the message
+	
+	li $v0 1		# load system call code for print_int
+	lw $a0 array($a1)	# address of the integer to print
+	syscall			# print the integer
+	
+	jr $ra			# jump to the return address
+
+###########################################################################################
+# Sets loop counter to zero and calls displayall_loop
+###########################################################################################
+displayall:
+	li $a2 1		# load 1 into $a2
+	j displayall_loop	# jump to displayall_loop
+
+###########################################################################################
+# Loops until all records in the array are displayed
+###########################################################################################
+displayall_loop:
+	move $a1 $a2			# copy contents of $a2 into $a1
+	
+	li $v0 4			# load system call code for print_string	
+	la $a0 newline			# address of the newline string
+	syscall				# print the message
+	
+	addi $sp $sp -4			# increase the stack pointer
+	sw $ra 0($sp)			# save the return address into the stack
+	jal printrecord			# jump and link printrecord
+	lw $ra 0($sp)			# recall the $ra from the stack
+	addi $sp $sp 4			# decrease the stack pointer
+		
+	li $v0 4			# load system call code for print_string	
+	la $a0 newline			# address of the newline string
+	syscall				# print the message
+		
+	addi $a2 $a2 1			# increment $a2 by 1
+	bgt $a2 $s0 display_menu	# branch if $a2 is greater tha $s0 to display_menu
+	j displayall_loop		# jump to displayall_loop
+				
+###########################################################################################
+# Exits the MIPS program
+###########################################################################################
+quit:
+	li $v0 10	# load system call code for terminate program
+	syscall		# terminate the program

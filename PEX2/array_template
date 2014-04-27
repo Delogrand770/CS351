@@ -1,0 +1,20 @@
+######################################################
+# Author: Lt Col David Bibighaus
+# Date: 14 Feb 11
+# Filename: arrays.s
+# Purpose: Demonstrate array usage in MIPS
+######################################################
+
+.data
+prompt1:  .asciiz  "Enter the number of elements you want to place in the array\n."
+prompt2:  .asciiz  "Enter the index of the array\n."
+prompt3:  .asciiz  "Enter the character to add to the array\n."
+
+array:  .space 1000     # space for 1000 bytes in the array
+.text
+
+main:			
+	
+	jr $ra
+	# exit the program
+# end main

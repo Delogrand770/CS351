@@ -1,0 +1,46 @@
+#J-Type
+	#Jump
+	#Jump and Link (used for functions and procedures)
+
+#Addressing Modes (p.327 - Section 6.5)
+	#Immediate (immediate value is address)
+	#Register Addressing (register holds address)
+	#Base or Displacement Addressing (used in lw)
+	#Psudo Direct Addressing (j-Type instructions)
+	#PC Relative Addressing (used in branches)
+	
+#I-Type
+	#If-Then
+		#beq : Branch if equal
+		#bne : Branch if not equal
+		#bge : Branch if greater than or equal
+		#ble : Branch if less than or equal
+		#blt : Branch if less than
+		#bgt : Branch if greater than
+	#Loops
+	
+.data
+x: .word 2
+y: .word 0
+
+.text
+main:
+	lw $s0 x		# load x from memory
+	
+	bgez $s0 else		# determine if x is greater than / equal to zero
+	
+then:
+
+	addi $s1 $s0 2		# using $s1 to hold, then same as y = x+2
+	sw $s1 y		# store result back to memory
+	j end_If
+
+else:
+
+	addi $s1 $s0 -2		# y = x-2
+	sw $s1 y		# store result back to memory
+
+end_If:
+	li $v0 1		# load code for print integer
+	move $a0 $s1		# output y to show what happened
+	syscall		

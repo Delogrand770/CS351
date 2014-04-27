@@ -1,0 +1,24 @@
+.data
+#variables
+A: 	.word 5
+B: 	.word 11
+X: 	.word 0
+
+.text
+
+main:
+	la $t3 A	# load the address of memory location A into $t3
+	lw $t0 0($t3)	# load A from memory, $t0 = mem[$t3]
+	lw $t1 4($t3)	# load B from memory, $t0 = mem[$t3+4]
+	
+	#lw $t0 A	# load $t0 with A
+	#lw $t1 B	# load $t1 with B
+	add $t0 $t0 $t1 # adds $t0 to $t1 and stores in $t0
+	sw $t0 X	# stores $t0 to X
+
+		li $v0 1	# load system call code for print_int
+		lw $a0 X	# copy contents of X to $a0
+		syscall		# print the result of the addition
+		
+		jr $ra		# exit the program
+# end main

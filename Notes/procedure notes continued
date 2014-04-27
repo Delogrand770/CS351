@@ -1,0 +1,72 @@
+###################################################
+
+
+# Saving multiple registers to the stack #
+
+#Caller
+
+addi $sp $sp -12 	# allocate stack memory
+sw $ra 0($sp)		# store $ra
+sw $t0 4($sp)		# store $t0
+sw $t1 8($sp)		# store $t1
+
+jal foo			# jump and link
+
+lw $t1 8($sp)		# load $t1
+lw $t0 4($sp)		# load $t0
+lw $ra 0($sp)		# load $ra
+addi $sp $sp 12		# deallocate stack memory
+
+#Callee
+
+jr $ra			# jump return
+
+###################################################
+
+
+# Saving S-Registers # Save $s registers then overwrite for callee use then restore
+
+#Caller
+
+addi $sp $sp -4		# allocate stack
+sw $ra 0($sp)		# save $ra
+jal foo			# jump and link
+lw $ra 0($sp)		# load $ra
+addi $sp $sp 4		# deallocate stack
+
+#Callee
+
+addi $sp $sp -8		# allocate stack
+sw $s0 0($sp)		# save $s0
+sw $s1 4($sp)		# save $s1
+#...			# random code that uses $s registers
+lw $s1 4($sp)		# load $s1
+lw $s0 0($sp)		# load $s0
+addi $sp $sp 8		# deallocate stack
+jr $ra			# jump return
+
+####################################################
+
+
+# Recursive Procedure Call #
+
+
+factorial:
+addi $sp $sp -8		# allocate stack
+sw $a0 4($sp)		# save argument $a0
+sw $ra 0($sp)		# save return address $ra
+addi $t0 $0 2		# set $t0 = 2
+slt $t0 $a0 $t0		# a <= 1 ?
+beq $t0 $0 else		# no: goto else
+addi $v0 $0 1		# yes return 1
+addi $sp $sp 8		# restore $sp (deallocate mem)
+jr $ra			# return
+
+else:
+addi $a0 $a0 -1		# n = n -1
+jal factorial		# RECURSIVE CALL
+lw $ra 0($sp)		# restore $ra of the caller
+lw $a0 4($sp)		# restore $a0 from the caller
+addi $sp $sp 8		# restore $sp (deallocate mem)
+mul $v0 $a0 $v0		# n * factorial (n-1)
+jr $ra			# return

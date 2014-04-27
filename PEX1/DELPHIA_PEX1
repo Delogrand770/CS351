@@ -1,0 +1,295 @@
+######################################################
+# Author: Gavin Delphia
+# Date: 22 Feb 12
+# Filename: PEX1
+# Purpose: PEX 1 Solution
+# Documentation: C3C Roman Young told me that I could use mfhi to get the remainder of a division operation
+# C3C Alex Thomson and I were in the same room when the PEX was coded but we could not see each other's screens. 
+# We did ask each other simple questions such as "whats is the syscall code for loading an integer?"
+######################################################
+
+.data
+# strings
+
+	#main	
+prompt:		.asciiz "Please enter a choice:\n"
+option1: 	.asciiz "1. What is the nth number of the Fibonacci Sequence?\n"
+option2:	.asciiz "2. Sort three values.\n"
+option3:  	.asciiz "3. Is the number divisible by 4?\n"
+option4:   	.asciiz "4. Quit\n"
+inform:		.asciiz "\nYour selection: "
+errormsg:	.asciiz "That is an invalid selection - try again\n\n"
+
+	#divide
+yournum:	.asciiz "Your number: "
+notdiv:		.asciiz " is not evenly divisible by "
+isdiv:		.asciiz " is evenly divisible by "
+thenum:		.asciiz "The number "
+
+	#sort
+firstnum:	.asciiz "The first number: "
+secnum:		.asciiz "The second number: "
+thirdnum:	.asciiz "The third number: "
+sorted:		.asciiz "The sorted order is "
+comma:		.asciiz ", "
+newline:	.asciiz "\n\n"
+
+	#fib
+seqnum:		.asciiz "The sequence of the number: "
+number:		.asciiz "Number "
+ofthe:		.asciiz " of the Fibonacci sequence is "
+fib_err:	.asciiz "Please enter a non-zero positive number that is less than 47\n\n"
+
+# variables
+
+	#main
+maxopts:	.word 4
+fibopt:		.word 1
+sortopt:	.word 2
+divopt:		.word 3
+quitopt:	.word 4
+
+	#divide
+divisor:	.word 4
+
+.text
+main:
+	lw $t0 maxopts	# load word maxopts into $t0
+	lw $t1 fibopt	# load word fibopt into $t1
+	lw $t2 sortopt	# load word sortopt into $t2
+	lw $t3 divopt	# load word divopt into $t3
+	lw $t4 quitopt	# load word quitopt into $t4
+	lw $t5 divisor	# load word divisor into $t5
+	
+	li $v0 4	# load system call code for print_string	
+	la $a0 prompt	# address of the prompt string
+	syscall		# print the message
+	
+	li $v0 4	# load system call code for print_string	
+	la $a0 option1	# address of the option1 string
+	syscall		# print the message
+	
+	li $v0 4	# load system call code for print_string
+	la $a0 option2	# address of the option2 string
+	syscall		# print the message
+
+	li $v0 4	# load system call code for print_string
+	la $a0 option3	# address of the option3 string
+	syscall		# print the message
+	
+	li $v0 4	# load system call code for print_string
+	la $a0 option4	# address of the option4 string
+	syscall		# print the message	
+	
+	li $v0 4	# load system call code for print_string
+	la $a0 inform	# address of the inform string
+	syscall		# print the message	
+	
+	li $v0 5	# load system call code for read integer
+	syscall		# get the integer
+	move $s0 $v0	# store the result in $s0
+	
+	blez $s0 main_error 	# if $s0 is less than or equal to zero jump to main_error
+	bgt $s0 $t0 main_error	# if $s0 is greater than $t0 jump to main_error
+	
+	beq $s0 $t1 fib		# jump to fib if $s0 is equal to $t1
+	beq $s0 $t2 sort	# jump to sort if $s0 is equal to $t2
+	beq $s0 $t3 divide	# jump to div if $s0 is equal to $t3
+	beq $s0 $t4 quit	# jump to quit if $s0 is equal to $t4
+	
+main_error:
+	li $v0 4	# load system call code for print_string
+	la $a0 errormsg	# address of the errormsg string
+	syscall		# print the message
+	j main		# jump back to main to ask again
+	
+fib:
+	li $v0 4	# load system call code for print_string
+	la $a0 seqnum	# address of the seqnum string
+	syscall		# print the message
+	
+	li $v0 5	# load system call code for read integer
+	syscall		# get the integer
+	move $s0 $v0	# store the result in $s0
+	
+	ble $s0 0 fib_error 	# if $s0 is less than or equal to 0 jump to fib_error
+	bge $s0	47 fib_error	# if $s0 is greater than or equal to 47 jump to fib_error
+	beq $s0 1 fib_one	# if $s0 equals 1 jump to fib_one
+	
+	li $s2 2	# initialize $s2 (loop counter) to 2
+	li $s4 0	# initialize $s4 (first fib number) to 0
+	li $s5 1	# initialize $s5 (second fib number) to 1
+	j fib_loop	# jump to fib_loop
+
+fib_error:
+	li $v0 4	# load system call code for print_string
+	la $a0 fib_err	# address of the fib_err string
+	syscall		# print the message
+		
+	j fib		# jump to fib
+
+fib_one:
+	li $s1 0	# initialize $s1 to 0
+	j fib_answer	# jump to fib_answer
+
+fib_loop:
+	add $s1 $s4 $s5		# add $s4 to $s5 and store in $s1 (result)
+	move $s4 $s5		# set $s4 equal to $s5
+	move $s5 $s1		# set $s5 equal to $s1
+	add $s2 $s2 1		# add 1 to $s2 (counter increment)
+	
+	bge $s2 $s0 fib_answer	# if $s2 (counter) is greater than $s0 (sequence number) jump to fib_answer
+		
+	j fib_loop		# jump to fib_loop
+	
+fib_answer:
+	li $v0 4	# load system call code for print_string
+	la $a0 number	# address of the number string
+	syscall		# print the message
+	
+	li $v0 1	# load system call code for print_integer
+	la $a0 0($s0)	# address of the $s0 integer
+	syscall		# print the integer
+	
+	li $v0 4	# load system call code for print_string
+	la $a0 ofthe	# address of the ofthe string
+	syscall		# print the message
+	
+	li $v0 1	# load system call code for print_integer
+	la $a0 0($s1)	# address of the $s1 integer
+	syscall		# print the integer
+	
+	li $v0 4	# load system call code for print_string
+	la $a0 newline	# address of the newline string
+	syscall		# print the message
+
+	j main		# jump back to main
+
+sort:
+	li $v0 4	# load system call code for print_string
+	la $a0 firstnum	# address of the firstnum string
+	syscall		# print the message
+	
+	li $v0 5	# load system call code for read integer
+	syscall		# get the integer
+	move $s0 $v0	# store the result in $s0
+	
+	li $v0 4	# load system call code for print_string
+	la $a0 secnum	# address of the secnum string
+	syscall		# print the message
+	
+	li $v0 5	# load system call code for read integer
+	syscall		# get the integer
+	move $s1 $v0	# store the result in $s1
+	
+	li $v0 4	# load system call code for print_string
+	la $a0 thirdnum	# address of the thirdnum string
+	syscall		# print the message
+	
+	li $v0 5	# load system call code for read integer
+	syscall		# get the integer
+	move $s2 $v0	# store the result in $s2
+	
+	j sort_logic 	# goto sort_logic
+	
+sort_logic:
+	bgt $s0 $s1 sort_cond1	# if $s0 greater than $s1 jump to sort_cond1
+	bgt $s1 $s2 sort_cond2	# if $s1 greater than $s2 jump to sort_cond2
+	bgt $s0 $s1 sort_cond1	# if $s0 greater than $s1 jump to sort_cond1
+	
+	li $v0 4	# load system call code for print_string
+	la $a0 sorted	# address of the sorted string
+	syscall		# print the message
+	
+	li $v0 1	# load system call code for print_integer
+	la $a0 0($s0)	# address of the $s0 integer
+	syscall		# print the integer
+	
+	li $v0 4	# load system call code for print_string
+	la $a0 comma	# address of the comma string
+	syscall		# print the message
+	
+	li $v0 1	# load system call code for print_integer
+	la $a0 0($s1)	# address of the $s1 integer
+	syscall		# print the integer
+	
+	li $v0 4	# load system call code for print_string
+	la $a0 comma	# address of the comma string
+	syscall		# print the message
+	
+	li $v0 1	# load system call code for print_integer
+	la $a0 0($s2)	# address of the $s2 integer
+	syscall		# print the integer
+	
+	li $v0 4	# load system call code for print_string
+	la $a0 newline	# address of the newline string
+	syscall		# print the message
+	
+	j main		# jump back to main
+	
+sort_cond1:
+	move $s3 $s0	# set $s0 to $s3
+	move $s0 $s1	# set $s1 to $s0
+	move $s1 $s3	# set $s2 to $s1
+	j sort_logic	# jump to sort_logic
+
+sort_cond2:
+	move $s3 $s1	# set $s1 to $s3
+	move $s1 $s2	# set $s2 to $s1
+	move $s2 $s3	# set $s3 to $s2
+	j sort_logic	# jump to sort_logic
+
+divide:
+	li $v0 4	# load system call code for print_string
+	la $a0 yournum	# address of the yournum string
+	syscall		# print the message
+	
+	li $v0 5	# load system call code for read integer
+	syscall		# get the integer
+	move $s0 $v0	# store the result in $s0
+	
+	div $s0 $t5	# divide $s0 (input) by $t5 (4)
+	mfhi $t8	# store remainder in $t8
+	
+	li $v0 4	# load system call code for print_string	
+	la $a0 thenum	# address of the thenum string
+	syscall		# print the message
+	
+	li $v0 1	# load system call code for print_integer
+	la $a0 0($s0)	# address of the $s0 integer
+	syscall		# print the integer
+	
+	beq $t8 0 divide_true 	# if $t8 (remainder) equals 0 jump to div_divisible
+	
+	li $v0 4	# load system call code for print_string	
+	la $a0 notdiv	# address of the notdiv string
+	syscall		# print the message
+	
+	li $v0 1	# load system call code for print_integer
+	la $a0 0($t5)	# address of the $t5 integer
+	syscall		# print the integer
+	
+	li $v0 4	# load system call code for print_string
+	la $a0 newline	# address of the newline string
+	syscall		# print the message
+	
+	j main		# jump back to main
+
+divide_true:
+	li $v0 4	# load system call code for print_string	
+	la $a0 isdiv	# address of the isdiv string
+	syscall		# print the message
+	
+	li $v0 1	# load system call code for print_integer
+	la $a0 0($t5)	# address of the $t5 integer
+	syscall		# print the integer
+	
+	li $v0 4	# load system call code for print_string	
+	la $a0 newline	# address of the newline string
+	syscall		# print the message
+	
+	j main		# jump back to main
+
+quit:
+	li $v0 10	# load system call code for terminate program
+	syscall		# terminate the program

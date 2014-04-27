@@ -1,0 +1,86 @@
+function SortArray($a1, $a2){
+	bgt $a1 $a2 {
+		li $s2 floor(($a1 + $a2)/2)
+		move $s3 $a1
+		move $s4 $a2
+		li $s5 array[$s2]
+
+		while $s3 < $s4 {
+			while array[$s3] < $s5 and $s3 < $s4 {
+				addi $s3 $s3 1
+			}
+
+			while array[$s4] > $s5 and $s4 > $s3 {
+				subi $s4 $s4 1
+			}
+
+			blt $s3 $s4 {
+				swap array[$s3] with array[$s4]
+			}
+		}
+
+		blt $s4 $s3 {
+			swap $s3 with $s4
+		}
+
+		SortArray($a1, $s3)
+		SortArray(($s3 + 1), $a2)
+	}
+	return
+}
+
+
+
+
+
+1, 2, 3, 0
+left  = 0 = $a1
+right = 2 = $a2
+
+if left < right :: 0 < 2 :: true
+middle     = 1 = $s2
+leftIdx    = 0 = $s3
+rightIdx   = 2 = $s4
+pivotValue = 2 = $s5
+
+while leftIdx < rightIdx :: 0 < 2 :: true 
+
+	while array(leftIdx) < pivotValue && leftIdx < rightIdx 
+		1 < 2 && 0 < 2 :: true  :: leftIdx = 1
+		2 < 2 && 1 < 2 :: false
+
+	while array(rightIdx) > pivotValue && rightIdx > leftIdx
+		3 > 2 && 2 > 1 :: true  :: rightIdx = 1
+		2 > 2 && 1 > 1 :: false
+
+	if leftIdx < rightIdx
+		1 < 1 :: false
+
+if rightIdx < leftIdx
+	1 < 1 :: false
+
+
+
+
+1, 1, 1, 0
+left  = 0 = $a1
+right = 2 = $a2
+
+if left < right :: 0 < 2 :: true
+middle     = 1 = $s2
+leftIdx    = 0 = $s3
+rightIdx   = 2 = $s4
+pivotValue = 1 = $s5
+
+while leftIdx < rightIdx :: 0 < 2 :: true 
+
+	while array(leftIdx) < pivotValue && leftIdx < rightIdx 
+		1 < 1 && 1 < 2 :: false
+
+	while array(rightIdx) > pivotValue && rightIdx > leftIdx
+		1 > 1 && 2 > 0 :: false
+
+	if leftIdx < rightIdx
+		0 < 2 :: true :: 1, 1, 1
+
+while leftIdx < rightIdx :: 0 < 2 :: true ! infinite loop

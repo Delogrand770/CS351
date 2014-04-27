@@ -1,0 +1,61 @@
+.data
+
+firstQuestion:	.asciiz "How many numbers do you want to enter?\n"
+enterInteger:	.asciiz "What is the number: "
+numOfInts:	.asciiz "Number of integers: "
+
+		.align 2	# align the myArray to a word boundary	
+myArray:	.space 200 	# 50 elements x 4 bits each
+lastString:	.asciiz "The end\n"
+
+# Array size = (# of lements) x (size of each element)
+
+.text
+
+main:
+	li $v0 4		# load system call code for print_string
+	la $a0 firstQuestion	# address of the inforfirstQuestion string
+	syscall			# print the message	
+		
+	li $v0 4		# load system call code for print_string
+	la $a0 numOfInts	# address of the numOfInts string
+	syscall			# print the message	
+	
+	li $v0 5		# load system call code for read integer
+	syscall			# get the integer
+	move $s0 $v0		# store the result in $s0
+	
+	li $s3 0		# initialize the counter to 0	
+	j loop			# jump to loop
+
+	
+loop:
+# $s3 is counter
+# $s1 is the current number inputted
+# $s0 is the total times to ask
+# $t1 is the offset address
+
+	bge $s3 $s0 end		# branch if counter is greater than or equal to $s0 (numbers asked for)
+
+	li $v0 4		# load system call code for print_string
+	la $a0 enterInteger	# address of the enterInteger string
+	syscall			# print the message	
+	
+	li $v0 5		# load system call code for read integer
+	syscall			# get the integer
+	move $s1 $v0		# store the result in $s1
+	
+	sll $t0 $s3 2		# shifts
+	sw $s1 myArray($t0)	# store data in array
+	addi $s3 $s3 1		# increment counter
+
+	j loop			# jump back to loop
+	
+end:
+	li $v0 10		# load terminate syscall
+	syscall			# execute syscall
+	
+	
+	
+	
+
